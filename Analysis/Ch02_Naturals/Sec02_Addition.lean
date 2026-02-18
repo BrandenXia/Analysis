@@ -6,10 +6,10 @@ import Analysis.Ch02_Naturals.Sec01_PeanoAxioms
 
 open Analysis.Ch02.Sec01
 
-namespace Analysis.Ch02.Sec01
+namespace Analysis.Ch02.Sec02
 
 def Natural.Add (n m : Natural) := match n with
-  | zero => m
+  | Natural.zero => m
   | n'++ => (Natural.Add n' m)++
 
 instance : Add Natural := ⟨Natural.Add⟩
@@ -127,7 +127,7 @@ def Natural.less_than (n m : Natural) : Prop := Natural.less_than_or_eq n m ∧ 
 instance : LT Natural := ⟨Natural.less_than⟩
 
 theorem Natural.ordering_rfl (a : Natural) : a ≥ a := by
-  exists zero
+  exists Natural.zero
   rw [add_zero]
 
 theorem Natural.ordering_trans (a b c : Natural) : a ≥ b ∧ b ≥ c → a ≥ c := by
@@ -145,9 +145,9 @@ theorem Natural.ordering_antisymm (a b : Natural) : a ≥ b ∧ b ≥ a → a = 
   rw [<-b2a, add_assoc] at a2b
   conv at a2b =>
     rhs
-    change zero + a
+    change Natural.zero + a
     rw [add_comm]
-  let cancelled := cancellation_law a (e + d) zero a2b
+  let cancelled := cancellation_law a (e + d) Natural.zero a2b
   apply add_eq_zero at cancelled
   rw [cancelled.1, add_zero] at b2a
   exact b2a
@@ -170,7 +170,7 @@ theorem Natural.ordering_add_positive (a b : Natural) :
     obtain ⟨d, a2b⟩ := h.1
     exists d
     constructor
-    · change ¬ d = zero
+    · change ¬ d = Natural.zero
       by_contra
       rw [this, add_zero] at a2b
       let contra := h.2
@@ -188,11 +188,11 @@ theorem Natural.ordering_add_positive (a b : Natural) :
       rw [this] at b_eq
       conv at b_eq =>
         lhs
-        change zero + b
+        change Natural.zero + b
         rw [add_comm]
-      let contra := cancellation_law b zero d
+      let contra := cancellation_law b Natural.zero d
       apply contra at b_eq
-      change d ≠ zero at d_pos
+      change d ≠ Natural.zero at d_pos
       symm at d_pos
       contradiction
 
@@ -221,9 +221,9 @@ theorem Natural.ordering_succ (a b : Natural) : a < b ↔ a++ ≤ b := by
       rw [this] at b_eq
       conv at b_eq =>
         rhs
-        change zero + b
+        change Natural.zero + b
         rw [add_comm]
-      let contra := cancellation_law b d++ zero
+      let contra := cancellation_law b d++ Natural.zero
       apply contra at b_eq
       contradiction
 
@@ -317,4 +317,67 @@ theorem natural_trichotomy (a b : Natural) : one_hot (a < b) (a = b) (a > b) := 
       symm at snd
       contradiction
 
-end Analysis.Ch02.Sec01
+theorem strong_induction_prep (m m₀ : Natural) (P : Natural → Prop)
+    (h : ∀ m', m₀ ≤ m' ∧ m' ≤ m ∧ P m') : ∀ (n m : Natural), m₀ ≤ m ∧ m < n → P m := by
+  let Q := fun n : Natural => ∀ m, m₀ ≤ m ∧ m < n → P m
+  apply mathematical_induction Q
+  · intro n h'
+    let contra := And.right h'
+    apply Iff.mp <| Natural.ordering_add_positive n Natural.zero at contra
+    obtain ⟨d, d_pos, n_eq⟩ := contra
+    symm at n_eq
+    apply add_eq_zero at n_eq
+    let zero_contra' := And.right n_eq
+    contradiction
+  · intro n ih
+    let bound_h := And.right <| And.right <| h n
+    intro m nh
+    let trichotomy := natural_trichotomy m n
+    rcases trichotomy with (h_lt | h_eq | h_gt)
+    · exact ih m <| And.intro (And.left nh) (And.left h_lt)
+    · rw [And.left <| And.right h_eq]
+      exact bound_h
+    · let nh' := And.right nh
+      let mh' := And.right <| And.right h_gt
+      apply Iff.mp <| Natural.ordering_add_positive m n++ at nh'
+      apply Iff.mp <| Natural.ordering_add_positive n m at mh'
+      obtain ⟨d, d_pos, n_eq⟩ := nh'
+      obtain ⟨e, e_pos, m_eq⟩ := mh'
+      rw [m_eq] at n_eq
+      cases d with
+      | zero => contradiction
+      | succ k =>
+        rw [add_assoc, add_succ, add_succ] at n_eq
+        apply Mathlib.Tactic.Contrapose.contrapose₁ <|
+          diff_natural_diff_succ n (n + (e + k)) at n_eq
+        change Natural.zero + n = n + (e + k) at n_eq
+        rw [add_comm] at n_eq
+        apply cancellation_law n Natural.zero (e + k) at n_eq
+        symm at n_eq
+        apply add_eq_zero at n_eq
+        let zero_contra := And.left n_eq
+        contradiction
+
+theorem strong_induction (m₀ : Natural) (P : Natural → Prop) :
+    ∀ m ≥ m₀, (∀ m', m₀ ≤ m' ∧ m' ≤ m ∧ P m') → P m := by
+  intro m mh h
+  apply strong_induction_prep m m₀ P h m++ m
+  constructor
+  · exact mh
+  · constructor
+    · exists (Natural.zero++)
+      rw [add_succ, add_zero]
+    · by_contra
+      change Natural.zero + m = Natural.zero + m++ at this
+      conv at this =>
+        left
+        rw [add_comm]
+      conv at this =>
+        right
+        rw [add_succ, add_comm, <-add_succ]
+      apply cancellation_law m Natural.zero Natural.zero++ at this
+      symm at this
+      apply zero_not_successor at this
+      exact this
+
+end Analysis.Ch02.Sec02
