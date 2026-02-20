@@ -2,8 +2,10 @@ import Mathlib.Logic.ExistsUnique
 import Mathlib.Tactic
 import Mathlib.Tactic.Contrapose
 
+import Analysis.Common
 import Analysis.Ch02_Naturals.Sec01_PeanoAxioms
 
+open Analysis.Common
 open Analysis.Ch02.Sec01
 
 namespace Analysis.Ch02.Sec02
@@ -210,7 +212,6 @@ theorem Natural.ordering_add_positive (a b : Natural) :
       symm at d_pos
       contradiction
 
-
 theorem Natural.ordering_succ (a b : Natural) : a < b ↔ a++ ≤ b := by
   constructor
   case mp =>
@@ -240,28 +241,6 @@ theorem Natural.ordering_succ (a b : Natural) : a < b ↔ a++ ≤ b := by
       let contra := add_cancellation_law b d++ Natural.zero
       apply contra at b_eq
       contradiction
-
-def one_hot (p q r : Prop) : Prop :=
-  (   p ∧ ¬ q ∧ ¬ r) ∨
-  ( ¬ p ∧   q ∧ ¬ r) ∨
-  ( ¬ p ∧ ¬ q ∧   r)
-
-theorem at_least_at_most_one_hot (p q r : Prop)
-    (at_least : p ∨ q ∨ r) (at_most : ¬ (p ∧ q) ∧ ¬ (p ∧ r) ∧ ¬ (q ∧ r)) :
-      one_hot p q r := by
-  rcases at_least with hp | hq | hr
-  · left
-    refine ⟨hp, ?_, ?_⟩
-    · intro hq; exact at_most.1 ⟨hp, hq⟩
-    · intro hr; exact at_most.2.1 ⟨hp, hr⟩
-  · right; left
-    refine ⟨?_, hq, ?_⟩
-    · intro hp; exact at_most.1 ⟨hp, hq⟩
-    · intro hr; exact at_most.2.2 ⟨hq, hr⟩
-  · right; right
-    refine ⟨?_, ?_, hr⟩
-    · intro hp; exact at_most.2.1 ⟨hp, hr⟩
-    · intro hq; exact at_most.2.2 ⟨hq, hr⟩
 
 theorem natural_trichotomy (a b : Natural) : one_hot (a < b) (a = b) (a > b) := by
   apply at_least_at_most_one_hot
