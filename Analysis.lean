@@ -1,2 +1,3 @@
 import Analysis.Ch02_Naturals.Sec01_PeanoAxioms
 import Analysis.Ch02_Naturals.Sec02_Addition
+import Analysis.Ch02_Naturals.Sec03_Multiplication

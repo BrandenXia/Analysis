@@ -68,7 +68,7 @@ theorem add_assoc (a b c : Natural) : (a + b) + c = a + (b + c) := by
         rw [add_comm]
     rw [ih]
 
-theorem cancellation_law (a b c : Natural) : a + b = a + c → b = c := by
+theorem add_cancellation_law (a b c : Natural) : a + b = a + c → b = c := by
   apply mathematical_induction (fun a => a + b = a + c → b = c)
   case h0 =>
     intro ih
@@ -147,7 +147,7 @@ theorem Natural.ordering_antisymm (a b : Natural) : a ≥ b ∧ b ≥ a → a = 
     rhs
     change Natural.zero + a
     rw [add_comm]
-  let cancelled := cancellation_law a (e + d) Natural.zero a2b
+  let cancelled := add_cancellation_law a (e + d) Natural.zero a2b
   apply add_eq_zero at cancelled
   rw [cancelled.1, add_zero] at b2a
   exact b2a
@@ -161,6 +161,20 @@ theorem Natural.ordering_add_preserves (a b c : Natural) : a ≥ b → a + c ≥
     lhs; rhs
     rw [add_comm]
   rw [<-add_assoc, a2b]
+
+theorem Natural.ordering_succ_preserves (a b : Natural) : a ≥ b ↔ a++ ≥ b++ := by
+  constructor
+  · intro h
+    obtain ⟨d, a2b⟩ := h
+    exists d
+    change (b + d)++ = (a++)
+    congr
+  · intro h
+    obtain ⟨d, b2a⟩ := h
+    exists d
+    apply_fun (Natural.succ)
+    · exact b2a
+    · exact succ_injective
 
 theorem Natural.ordering_add_positive (a b : Natural) :
     a < b ↔ ∃ d, is_positive d ∧ b = a + d := by
@@ -190,7 +204,7 @@ theorem Natural.ordering_add_positive (a b : Natural) :
         lhs
         change Natural.zero + b
         rw [add_comm]
-      let contra := cancellation_law b Natural.zero d
+      let contra := add_cancellation_law b Natural.zero d
       apply contra at b_eq
       change d ≠ Natural.zero at d_pos
       symm at d_pos
@@ -223,7 +237,7 @@ theorem Natural.ordering_succ (a b : Natural) : a < b ↔ a++ ≤ b := by
         rhs
         change Natural.zero + b
         rw [add_comm]
-      let contra := cancellation_law b d++ Natural.zero
+      let contra := add_cancellation_law b d++ Natural.zero
       apply contra at b_eq
       contradiction
 
@@ -283,7 +297,7 @@ theorem natural_trichotomy (a b : Natural) : one_hot (a < b) (a = b) (a > b) := 
           subst b
           change Natural.zero + a++ = Natural.zero + a at this
           rw [add_succ, add_comm, <-add_succ] at this
-          apply cancellation_law a Natural.zero++ Natural.zero at this
+          apply add_cancellation_law a Natural.zero++ Natural.zero at this
           contradiction
       case inr.inr =>
         right; right
@@ -352,7 +366,7 @@ theorem strong_induction_prep (m m₀ : Natural) (P : Natural → Prop)
           diff_natural_diff_succ n (n + (e + k)) at n_eq
         change Natural.zero + n = n + (e + k) at n_eq
         rw [add_comm] at n_eq
-        apply cancellation_law n Natural.zero (e + k) at n_eq
+        apply add_cancellation_law n Natural.zero (e + k) at n_eq
         symm at n_eq
         apply add_eq_zero at n_eq
         let zero_contra := And.left n_eq
@@ -375,7 +389,7 @@ theorem strong_induction (m₀ : Natural) (P : Natural → Prop) :
       conv at this =>
         right
         rw [add_succ, add_comm, <-add_succ]
-      apply cancellation_law m Natural.zero Natural.zero++ at this
+      apply add_cancellation_law m Natural.zero Natural.zero++ at this
       symm at this
       apply zero_not_successor at this
       exact this

@@ -1,4 +1,5 @@
 import Mathlib.Logic.ExistsUnique
+import Mathlib.Tactic
 
 namespace Analysis.Ch02.Sec01
 
@@ -40,5 +41,11 @@ theorem recursive_definitions (fₙ : Natural → Natural → Natural) (c : Natu
         intro n ih
         rw [And.right ha' n]
         congr
+
+theorem succ_injective (n m : Natural) : n++ = m++ → n = m := by
+  intro h
+  by_contra
+  apply diff_natural_diff_succ at this
+  contradiction
 
 end Analysis.Ch02.Sec01
