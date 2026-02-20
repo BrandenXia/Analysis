@@ -51,16 +51,44 @@ theorem Integer.eq_diff (n : Integer) : ∃ a b, n = a —— b := by
   intro ⟨a, b⟩
   exists a, b
 
-def Integer.add : Integer → Integer → Integer :=
+def Integer.Add : Integer → Integer → Integer :=
   Quotient.lift₂ (fun ⟨a, b⟩ ⟨c, d⟩ => (a + c) —— (b + d)) (
     by
       intro ⟨a, b⟩ ⟨c, d⟩ ⟨a', b'⟩ ⟨c', d'⟩ h1 h2
       replace h1 : a + b' = a' + b := h1
       replace h2 : c + d' = c' + d := h2
-      simp
-      sorry
+      simp only [Integer.eqiv_iff]
+      linarith
   )
 
-instance : Add Integer := ⟨Integer.add⟩
+instance : Add Integer := ⟨Integer.Add⟩
+
+theorem Integer.add_eq (a b c d : ℕ) : (a —— b) + (c —— d) = (a + c) —— (b + d) := by
+  rfl
+
+theorem Integer.mul_congr_right (a b c d c' d' : ℕ) (h : c —— d = c' —— d') :
+    (a * c + b * d) —— (a * d + b * c) = (a * c' + b * d') —— (a * d' + b * c') := by
+  simp only [eqiv_iff] at *
+  calc
+    _ = a * (c + d') + b * (c' + d) := by ring
+    _ = a * (c' + d) + b * (c + d') := by rw [h]
+    _ = _ := by ring
+
+def Integer.Mul : Integer → Integer → Integer :=
+  Quotient.lift₂ (fun ⟨a, b⟩ ⟨c, d⟩ => (a * c + b * d) —— (a * d + b * c)) (
+    by
+      intro ⟨a, b⟩ ⟨c, d⟩ ⟨a', b'⟩ ⟨c', d'⟩ h1 h2
+      replace h1 : a + b' = a' + b := h1
+      replace h2 : c + d' = c' + d := h2
+      let eqiv := Integer.eqiv_iff c d c' d'
+      apply Iff.mpr eqiv at h2
+      simp only
+      rw [Integer.mul_congr_right a b c d c' d' h2]
+      simp only [Integer.eqiv_iff]
+      calc
+        _ = (a + b') * c' + (a' + b) * d' := by ring
+        _ = (a' + b) * c' + (a + b') * d' := by rw [h1]
+        _ = _ := by ring
+  )
 
 end Analysis.Ch04.Sec01
