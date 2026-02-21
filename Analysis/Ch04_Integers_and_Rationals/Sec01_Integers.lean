@@ -1,4 +1,5 @@
 import Mathlib.Tactic
+import Mathlib.Algebra.Group.MinimalAxioms
 
 import Analysis.Common
 
@@ -74,9 +75,9 @@ theorem Integer.mul_congr_right (a b c d c' d' : ℕ) (h : c —— d = c' —�
     (a * c + b * d) —— (a * d + b * c) = (a * c' + b * d') —— (a * d' + b * c') := by
   simp only [Integer.eq] at *
   calc
-    _ = a * (c + d') + b * (c' + d) := by ring
+    _ = a * (c + d') + b * (c' + d) := by group
     _ = a * (c' + d) + b * (c + d') := by rw [h]
-    _ = _ := by ring
+    _ = _ := by group
 
 def Integer.Mul : Integer → Integer → Integer :=
   Quotient.lift₂ (fun ⟨a, b⟩ ⟨c, d⟩ => (a * c + b * d) —— (a * d + b * c)) (
@@ -89,9 +90,9 @@ def Integer.Mul : Integer → Integer → Integer :=
       rw [Integer.mul_congr_right a b c d c' d' h2]
       simp only [Integer.eq]
       calc
-        _ = (a + b') * c' + (a' + b) * d' := by ring
+        _ = (a + b') * c' + (a' + b) * d' := by group
         _ = (a' + b) * c' + (a + b') * d' := by rw [h1]
-        _ = _ := by ring
+        _ = _ := by group
   )
 
 instance : Mul Integer := ⟨Integer.Mul⟩
@@ -129,21 +130,131 @@ instance : Neg Integer := ⟨Integer.Neg⟩
 
 theorem Integer.neg_eq (a b : ℕ) : -(a —— b) = b —— a := by rfl
 
-def Integer.is_positive (x : Integer) : Prop := ∃ n : ℕ, x =  n ∧ n > 0
-def Integer.is_negative (x : Integer) : Prop := ∃ n : ℕ, x = -n ∧ n > 0
+def Integer.is_positive (x : Integer) : Prop := ∃ n : ℕ, n > 0 ∧ x =  n 
+def Integer.is_negative (x : Integer) : Prop := ∃ n : ℕ, n > 0 ∧ x = -n
 
-def Integer.trichotomy (x : Integer) :
+theorem Integer.trichotomy (x : Integer) :
     one_hot x.is_positive x.is_negative (x = 0) := by
   apply at_least_at_most_one_hot
   · obtain ⟨a, b⟩ := x
     rcases Nat.lt_trichotomy a b with (ha | hab | hb)
     · right; left
       obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_lt ha
-      sorry
+      exists n + 1
+      constructor
+      · simp
+      · change a —— (a + n + 1) = 0 —— (n + 1)
+        simp only [eq]
+        linarith
     · right; right
-      sorry
+      change a —— b = 0 —— 0
+      simp only [eq, add_zero, zero_add]
+      exact hab
     · left
-      sorry
-  · sorry
+      obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_lt hb
+      exists n + 1
+      constructor
+      · simp
+      · change (b + n + 1) —— b = (n + 1) —— 0
+        simp only [eq]
+        linarith
+  · and_intros
+    · by_contra
+      obtain ⟨n, hn, rfl⟩ := this.1
+      obtain ⟨m, hm, neg⟩ := this.2
+      simp only [natCast_eq, neg_eq, eq, add_zero, Nat.add_eq_zero_iff] at neg
+      simp only [And.left neg] at hn
+      contradiction
+    · by_contra
+      obtain ⟨n, hn, rfl⟩ := this.1
+      let neg := this.2
+      change n —— 0 = 0 —— 0 at neg
+      simp only [eq, add_zero] at neg
+      simp only [neg] at hn
+      contradiction
+    · by_contra
+      obtain ⟨n, hn, rfl⟩ := this.1
+      let neg := this.2
+      change 0 —— n = 0 —— 0 at neg
+      simp only [eq, add_zero, zero_add] at neg
+      symm at neg
+      simp only [neg] at hn
+      contradiction
+
+instance : AddGroup Integer := by
+  apply AddGroup.ofLeftAxioms
+  case assoc =>
+    rintro ⟨a₁, a₂⟩ ⟨b₁, b₂⟩ ⟨c₁, c₂⟩ 
+    change (a₁ —— a₂) + (b₁ —— b₂) + (c₁ —— c₂) = (a₁ —— a₂) + ((b₁ —— b₂) + (c₁ —— c₂))
+    simp only [Integer.add_eq, Integer.eq]
+    abel
+  case zero_add =>
+    rintro ⟨a, b⟩
+    change (0 —— 0) + (a —— b) = a —— b
+    simp only [Integer.add_eq, zero_add]
+  case neg_add_cancel =>
+    rintro ⟨a, b⟩
+    change -(a —— b) + (a —— b) = (0 —— 0)
+    simp only [Integer.neg_eq, Integer.add_eq, Integer.eq]
+    abel
+
+instance : AddCommGroup Integer where
+  add_comm := by
+    rintro ⟨a₁, a₂⟩ ⟨b₁, b₂⟩
+    change (a₁ —— a₂) + (b₁ —— b₂) = (b₁ —— b₂) + (a₁ —— a₂)
+    simp only [Integer.add_eq, Integer.eq]
+    abel
+
+instance : CommMonoid Integer where
+  mul_assoc := by
+    rintro ⟨a₁, a₂⟩ ⟨b₁, b₂⟩ ⟨c₁, c₂⟩
+    change (a₁ —— a₂) * (b₁ —— b₂) * (c₁ —— c₂) = (a₁ —— a₂) * ((b₁ —— b₂) * (c₁ —— c₂))
+    simp only [Integer.mul_eq, Integer.eq]
+    group
+  mul_comm := by
+    rintro ⟨a₁, a₂⟩ ⟨b₁, b₂⟩
+    change (a₁ —— a₂) * (b₁ —— b₂) = (b₁ —— b₂) * (a₁ —— a₂)
+    simp only [Integer.mul_eq, Integer.eq]
+    group
+  one_mul := by
+    rintro ⟨a, b⟩
+    change (1 —— 0) * (a —— b) = a —— b
+    simp only [Integer.mul_eq, Integer.eq]
+    group
+  mul_one := by
+    rintro ⟨a, b⟩
+    change (a —— b) * (1 —— 0) = a —— b
+    simp only [Integer.mul_eq, Integer.eq]
+    group
+
+instance : CommRing Integer where
+  left_distrib := by
+    rintro ⟨a₁, a₂⟩ ⟨b₁, b₂⟩ ⟨c₁, c₂⟩
+    change (a₁ —— a₂) * ((b₁ —— b₂) + (c₁ —— c₂)) =
+      (a₁ —— a₂) * (b₁ —— b₂) + (a₁ —— a₂) * (c₁ —— c₂)
+    simp only [Integer.add_eq, Integer.mul_eq, Integer.eq]
+    group
+  right_distrib := by
+    rintro ⟨a₁, a₂⟩ ⟨b₁, b₂⟩ ⟨c₁, c₂⟩
+    change ((a₁ —— a₂) + (b₁ —— b₂)) * (c₁ —— c₂) =
+      (a₁ —— a₂) * (c₁ —— c₂) + (b₁ —— b₂) * (c₁ —— c₂)
+    simp only [Integer.add_eq, Integer.mul_eq, Integer.eq]
+    group
+  zero_mul := by
+    rintro ⟨a, b⟩
+    change (0 —— 0) * (a —— b) = 0 —— 0
+    simp only [Integer.mul_eq, Integer.eq]
+    abel
+  mul_zero := by
+    rintro ⟨a, b⟩
+    change (a —— b) * (0 —— 0) = 0 —— 0
+    simp only [Integer.mul_eq, Integer.eq]
+    abel
+
+theorem Integer.sub_eq (a b : Integer) : a - b = a + (-b) := by rfl
+
+theorem Integer.sub_eq_formal_sub (a b : ℕ) : (a : Integer) - (b : Integer) = a —— b := by
+  simp only [Integer.sub_eq, Integer.natCast_eq, Integer.neg_eq, Integer.add_eq, Integer.eq]
+  abel
 
 end Analysis.Ch04.Sec01
