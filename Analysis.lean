@@ -3,3 +3,4 @@ import Analysis.Ch02_Naturals.Sec02_Addition
 import Analysis.Ch02_Naturals.Sec03_Multiplication
 
 import Analysis.Ch04_Integers_and_Rationals.Sec01_Integers
+import Analysis.Ch04_Integers_and_Rationals.Sec02_Rationals
