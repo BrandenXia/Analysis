@@ -57,14 +57,13 @@ theorem Integer.eq_diff (n : Integer) : ∃ a b, n = a —— b := by
   exists a, b
 
 def Integer.Add : Integer → Integer → Integer :=
-  Quotient.lift₂ (fun ⟨a, b⟩ ⟨c, d⟩ => (a + c) —— (b + d)) (
-    by
+  Quotient.lift₂ (fun ⟨a, b⟩ ⟨c, d⟩ => (a + c) —— (b + d))
+    <| by
       intro ⟨a, b⟩ ⟨c, d⟩ ⟨a', b'⟩ ⟨c', d'⟩ h1 h2
       replace h1 : a + b' = a' + b := h1
       replace h2 : c + d' = c' + d := h2
       simp only [Integer.eq]
       linarith
-  )
 
 instance : Add Integer := ⟨Integer.Add⟩
 
@@ -80,8 +79,8 @@ theorem Integer.mul_congr_right (a b c d c' d' : ℕ) (h : c —— d = c' —�
     _ = _ := by group
 
 def Integer.Mul : Integer → Integer → Integer :=
-  Quotient.lift₂ (fun ⟨a, b⟩ ⟨c, d⟩ => (a * c + b * d) —— (a * d + b * c)) (
-    by
+  Quotient.lift₂ (fun ⟨a, b⟩ ⟨c, d⟩ => (a * c + b * d) —— (a * d + b * c))
+    <| by
       intro ⟨a, b⟩ ⟨c, d⟩ ⟨a', b'⟩ ⟨c', d'⟩ h1 h2
       replace h1 : a + b' = a' + b := h1
       replace h2 : c + d' = c' + d := h2
@@ -93,7 +92,6 @@ def Integer.Mul : Integer → Integer → Integer :=
         _ = (a + b') * c' + (a' + b) * d' := by group
         _ = (a' + b) * c' + (a + b') * d' := by rw [h1]
         _ = _ := by group
-  )
 
 instance : Mul Integer := ⟨Integer.Mul⟩
 

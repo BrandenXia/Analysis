@@ -52,6 +52,44 @@ def Rational.formalDiv (a b : ℤ) : Rational :=
 infix:100 " // " => Rational.formalDiv
 
 theorem Rational.eq (a c : ℤ) {b d : ℤ} (hb : b ≠ 0) (hd : d ≠ 0) :
-    a // b = c // d ↔ a * d = c * b := by sorry
+    a // b = c // d ↔ a * d = c * b := by
+  constructor
+  · intro h
+    simp only [Rational.formalDiv, hb, hd, ne_eq, not_false_eq_true, reduceDIte] at h
+    apply Quotient.exact h
+  · intro h
+    apply Quotient.sound
+    simp only [hb, hd, ne_eq, not_false_eq_true, reduceDIte, Rational_.eq_iff]
+    exact h
+
+theorem Rational.eq_diff (n : Rational) : ∃ a b, b ≠ 0 ∧ n = a // b := by
+  apply Quotient.ind _ n
+  intro ⟨a, b, h⟩
+  refine ⟨a, b, h, ?_⟩
+  simp [formalDiv, h]
+
+instance Rational.decidableEq : DecidableEq Rational := by
+  intro a b
+  have : ∀ n m,
+      Decidable (Quotient.mk Rational_.instSetoid n = Quotient.mk Rational_.instSetoid m) := by
+    intro ⟨a, b, hb⟩ ⟨c, d, hd⟩
+    exact if h : a * d = c * b then
+      isTrue (Quotient.sound h)
+    else
+      isFalse (fun h_eq => h (Quotient.exact h_eq))
+  exact Quotient.recOnSubsingleton₂ a b this
+
+def Rational.Add : Rational → Rational → Rational :=
+  Quotient.lift₂ (fun ⟨a, b, hb⟩ ⟨c, d, hd⟩ => (a * d + c * b) // (b * d))
+    <| by
+      intro ⟨a, b, hb⟩ ⟨c, d, hd⟩ ⟨a', b', hb'⟩ ⟨c', d', hd'⟩ h1 h2
+      simp_all [eq]
+      grind
+
+instance : Add Rational := ⟨Rational.Add⟩
+
+theorem Rational.add_eq (a c : ℤ) {b d : ℤ} (hb : b ≠ 0) (hd : d ≠ 0) :
+    a // b + c // d = (a * d + c * b) // (b * d) := by
+  sorry
 
 end Analysis.Ch04.Sec02
