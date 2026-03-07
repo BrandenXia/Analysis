@@ -90,6 +90,89 @@ instance : Add Rational := ⟨Rational.Add⟩
 
 theorem Rational.add_eq (a c : ℤ) {b d : ℤ} (hb : b ≠ 0) (hd : d ≠ 0) :
     a // b + c // d = (a * d + c * b) // (b * d) := by
-  sorry
+  change Rational.Add (a // b) (c // d) = (a * d + c * b) // (b * d)
+  simp [Rational.formalDiv, Rational.Add, hb, hd]
+
+def Rational.Mul : Rational → Rational → Rational :=
+  Quotient.lift₂ (fun ⟨a, b, hb⟩ ⟨c, d, hd⟩ => (a * c) // (b * d))
+    <| by
+      intro ⟨a, b, hb⟩ ⟨c, d, hd⟩ ⟨a', b', hb'⟩ ⟨c', d', hd'⟩ h1 h2
+      simp_all [eq]
+      grind
+
+instance : Mul Rational := ⟨Rational.Mul⟩
+
+theorem Rational.mul_eq (a c : ℤ) {b d : ℤ} (hb : b ≠ 0) (hd : d ≠ 0) :
+    (a // b) * (c // d) = (a * c) // (b * d) := by
+  change Rational.Mul (a // b) (c // d) = (a * c) // (b * d)
+  simp [Rational.formalDiv, Rational.Mul, hb, hd]
+
+def Rational.Neg : Rational → Rational :=
+  Quotient.lift (fun ⟨a, b, hb⟩ => (-a) // b)
+    <| by
+      intro ⟨a, b, hb⟩ ⟨a', b', hb'⟩ h
+      simp_all [eq]
+
+instance : Neg Rational := ⟨Rational.Neg⟩
+
+theorem Rational.neg_eq (a : ℤ) {b : ℤ} (hb : b ≠ 0) :
+    - (a // b) = (-a) // b := by
+  change Rational.Neg (a // b) = (-a) // b
+  simp [Rational.formalDiv, Rational.Neg, hb]
+
+instance : IntCast Rational where
+  intCast n := n // 1
+
+instance : NatCast Rational where
+  natCast n := (n : ℤ) // 1
+
+instance {n : ℕ} : OfNat Rational n where
+  ofNat := (n : ℤ) // 1
+
+theorem Rational.coe_Int_eq (n : ℤ) : (n : Rational) = n // 1 := by rfl
+theorem Rational.coe_Nat_eq (n : ℕ) : (n : Rational) = n // 1 := by rfl
+theorem Rational.ofNat_eq (n : ℕ) : (ofNat(n) : Rational) = (ofNat(n) : Nat) // 1 := by rfl
+
+theorem Rational.natCast_succ (n : ℕ) : ((n + 1 : ℕ) : Rational) = (n : Rational) + 1 := by
+  simp [ofNat_eq, Rational.coe_Nat_eq, Rational.add_eq]
+
+theorem Rational.intCast_add (n m : ℤ) : (n : Rational) + (m : Rational) = (n + m : ℤ) := by
+  simp [Rational.coe_Int_eq, Rational.add_eq]
+
+theorem Rational.intCast_mul (n m : ℤ) : (n : Rational) * (m : Rational) = (n * m : ℤ) := by
+  simp [Rational.coe_Int_eq, Rational.mul_eq]
+
+theorem Rational.intCast_neg (n : ℤ) : - (n : Rational) = (-n : ℤ) := by
+  simp [Rational.coe_Int_eq, Rational.neg_eq]
+
+theorem Rational.coe_Int_inj : Function.Injective (fun n : ℤ => (n : Rational)) := by
+  intro n m h
+  simp only [Rational.coe_Int_eq, eq, ne_eq, one_ne_zero, not_false_eq_true, mul_one] at h
+  exact h
+
+def Rational.Inv : Rational → Rational :=
+  Quotient.lift (fun ⟨a, b, hb⟩ => b // a)
+    <| by
+      intro ⟨a, b, hb⟩ ⟨a', b', hb'⟩ h
+      simp_all only [Rational_.eq_iff]
+      by_cases ha : a = 0
+      · simp_all [formalDiv]
+      · rw [<-ne_eq] at ha
+        let hab' := mul_ne_zero ha hb'
+        simp only [h, ne_eq, mul_eq_zero, not_or] at hab'
+        let ha' := And.left hab'
+        rw [<-ne_eq] at ha'
+        simp only [ne_eq, not_false_eq_true, eq, ha', ha]
+        rw [mul_comm]
+        conv in b' * a => rw [mul_comm]
+        symm
+        exact h
+
+instance : Inv Rational := ⟨Rational.Inv⟩
+
+theorem Rational.inv_eq (a : ℤ) {b : ℤ} (hb : b ≠ 0) (ha : a ≠ 0) :
+    (a // b)⁻¹ = b // a := by
+  change Rational.Inv (a // b) = b // a
+  simp [Rational.formalDiv, Rational.Inv, hb, ha]
 
 end Analysis.Ch04.Sec02
